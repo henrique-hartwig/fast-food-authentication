@@ -1,6 +1,7 @@
 import json
 import boto3
 import os
+from datetime import datetime
 
 cognito = boto3.client("cognito-idp")
 USER_POOL_ID = os.environ["USER_POOL_ID"]
@@ -22,7 +23,7 @@ def create_user(event):
         name = body["name"]
         email = body["email"]
 
-        response = cognito.admin_create_user(
+        cognito.admin_create_user(
             UserPoolId=USER_POOL_ID,
             Username=email,
             UserAttributes=[
@@ -31,7 +32,6 @@ def create_user(event):
                 {"Name": "name", "Value": name}
             ]
         )
-
         return {"statusCode": 201, "body": json.dumps({"message": "Created user successfully"})}
 
     except Exception as e:
@@ -40,21 +40,25 @@ def create_user(event):
 def get_user(event):
     try:
         cpf = event["pathParameters"]["cpf"]
-
-        response = cognito.list_users(
-            UserPoolId=USER_POOL_ID,
-            Filter=f'custom:cpf = "{cpf}"'
-        )
-
-        users = response.get("Users", [])
-
-        if not users:
-            return {"statusCode": 404, "body": json.dumps({"message": "User not found"})}
-
-        user_data = users[0]
-        user_info = {attr["Name"]: attr["Value"] for attr in user_data["Attributes"]}
-
-        return {"statusCode": 200, "body": json.dumps(user_info)}
-
+        response = cognito.list_users(UserPoolId=USER_POOL_ID)
+        
+        for user in response.get("Users", []):
+            user_data = {}
+            for key, value in user.items():
+                if isinstance(value, datetime):
+                    user_data[key] = value.isoformat()
+                else:
+                    user_data[key] = value
+                
+            for attr in user.get("Attributes", []):
+                if attr["Name"] == "custom:cpf" and attr["Value"] == cpf:
+                    return {
+                        "statusCode": 200,
+                        "body": json.dumps({"message": user_data})
+                    }
+        
+        return {"statusCode": 404, "body": json.dumps({"message": "User not found"})}
+    
     except Exception as e:
+        print(f"Error to search user: {e}")
         return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
