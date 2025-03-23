@@ -1,8 +1,8 @@
 import json
 import pytest
 import unittest.mock as mock
-
 from authentication import app
+
 
 @pytest.fixture()
 def apigw_event_get():
