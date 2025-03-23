@@ -109,10 +109,10 @@ Tests are defined in the `tests` folder in this project. Use PIP to install the 
 ```bash
 fast-food-authentication$ pip install -r tests/requirements.txt --user
 # unit test
-fast-food-authentication$ python -m pytest tests/unit -v
+fast-food-authentication$ .venv/bin/python3 -m pytest tests/unit -v
 # integration test, requiring deploying the stack first.
 # Create the env variable AWS_SAM_STACK_NAME with the name of the stack we are testing
-fast-food-authentication$ AWS_SAM_STACK_NAME="fast-food-authentication" python -m pytest tests/integration -v
+fast-food-authentication$ AWS_SAM_STACK_NAME="fast-food-authentication" .venv/bin/python3 -m pytest tests/integration -v
 ```
 
 ## Cleanup

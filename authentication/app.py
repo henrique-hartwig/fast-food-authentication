@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 cognito = boto3.client("cognito-idp")
-USER_POOL_ID = os.environ["USER_POOL_ID"]
+USER_POOL_ID = os.environ.get("USER_POOL_ID", 'us-east-1_examplePool123')
 
 def lambda_handler(event, context):
     http_method = event["httpMethod"]

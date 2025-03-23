@@ -1,5 +1,4 @@
 import os
-
 import boto3
 import pytest
 import requests
@@ -35,11 +34,36 @@ class TestApiGateway:
         if not api_outputs:
             raise KeyError(f"AuthenticationAPI not found in stack {stack_name}")
 
-        return api_outputs[0]["OutputValue"]  # Extract url from stack outputs
+        return api_outputs[0]["OutputValue"]
 
-    def test_api_gateway(self, api_gateway_url):
-        """ Call the API Gateway endpoint and check the response """
-        response = requests.get(api_gateway_url)
+    def test_api_gateway_get(self, api_gateway_url):
+        """ Test GET endpoint """
+        params = {
+            "cpf": "01234567891"
+        }
+        response = requests.get(api_gateway_url, params=params)
 
         assert response.status_code == 200
-        assert response.json() == {"message": "Authentication function"}
+        data = response.json()
+        assert "message" in data
+        assert "user" in data
+        assert data["user"]["cpf"] == "01234567891"
+
+    def test_api_gateway_post(self, api_gateway_url):
+        """ Test POST endpoint """
+        payload = {
+            "name": "John Doe",
+            "email": "john@example.com",
+            "password": "secret123",
+            "cpf": "01234567891"
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+        response = requests.post(api_gateway_url, json=payload, headers=headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert data["message"] == "User authenticated successfully"
+        assert "token" in data
