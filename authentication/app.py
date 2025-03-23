@@ -1,35 +1,60 @@
-import os
 import json
 import boto3
+import os
 
-cognito_client = boto3.client("cognito-idp")
-
+cognito = boto3.client("cognito-idp")
 USER_POOL_ID = os.environ["USER_POOL_ID"]
-CLIENT_ID = os.environ["CLIENT_ID"]
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    http_method = event["httpMethod"]
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    if http_method == "POST":
+        return create_user(event)
+    elif http_method == "GET":
+        return get_user(event)
+    else:
+        return {"statusCode": 405, "body": json.dumps({"message": "Method not allowed"})}
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+def create_user(event):
+    try:
+        body = json.loads(event["body"])
+        cpf = body["cpf"]
+        name = body["name"]
+        email = body["email"]
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+        response = cognito.admin_create_user(
+            UserPoolId=USER_POOL_ID,
+            Username=email,
+            UserAttributes=[
+                {"Name": "email", "Value": email},
+                {"Name": "custom:cpf", "Value": cpf},
+                {"Name": "name", "Value": name}
+            ]
+        )
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+        return {"statusCode": 201, "body": json.dumps({"message": "Created user successfully"})}
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+    except Exception as e:
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
+def get_user(event):
+    try:
+        cpf = event["pathParameters"]["cpf"]
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"message": "Authentication function"}),
-    }
+        response = cognito.list_users(
+            UserPoolId=USER_POOL_ID,
+            Filter=f'custom:cpf = "{cpf}"'
+        )
+
+        users = response.get("Users", [])
+
+        if not users:
+            return {"statusCode": 404, "body": json.dumps({"message": "User not found"})}
+
+        user_data = users[0]
+        user_info = {attr["Name"]: attr["Value"] for attr in user_data["Attributes"]}
+
+        return {"statusCode": 200, "body": json.dumps(user_info)}
+
+    except Exception as e:
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
