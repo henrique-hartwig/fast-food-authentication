@@ -3,7 +3,8 @@ import boto3
 import os
 from datetime import datetime
 
-cognito = boto3.client("cognito-idp")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+cognito = boto3.client("cognito-idp", region_name=AWS_REGION)
 USER_POOL_ID = os.environ.get("USER_POOL_ID", 'us-east-1_examplePool123')
 
 def lambda_handler(event, context):
