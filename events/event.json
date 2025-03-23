@@ -53,7 +53,7 @@
       "userAgent": "Custom User Agent String",
       "user": null
     },
-    "path": "/prod/hello",
+    "path": "/hello",
     "resourcePath": "/hello",
     "httpMethod": "POST",
     "apiId": "1234567890",

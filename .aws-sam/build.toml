@@ -5,6 +5,7 @@ codeuri = "/home/henrique/git/fast-food-authentication/hello_world"
 runtime = "python3.12"
 architecture = "x86_64"
 handler = "app.lambda_handler"
+source_hash = "1ed77efc54703edc261ce3abb76d2c7c89af5579488ea179de6e12d3db82160b"
 manifest_hash = "3298f13049d19cffaa37ca931dd4d421"
 packagetype = "Zip"
 functions = ["HelloWorldFunction"]
