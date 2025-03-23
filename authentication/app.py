@@ -1,35 +1,65 @@
-import os
 import json
 import boto3
+import os
+from datetime import datetime
 
-cognito_client = boto3.client("cognito-idp")
-
-USER_POOL_ID = os.environ["USER_POOL_ID"]
-CLIENT_ID = os.environ["CLIENT_ID"]
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+cognito = boto3.client("cognito-idp", region_name=AWS_REGION)
+USER_POOL_ID = os.environ.get("USER_POOL_ID", 'us-east-1_examplePool123')
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    http_method = event["httpMethod"]
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    if http_method == "POST":
+        return create_user(event)
+    elif http_method == "GET":
+        return get_user(event)
+    else:
+        return {"statusCode": 405, "body": json.dumps({"message": "Method not allowed"})}
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+def create_user(event):
+    try:
+        body = json.loads(event["body"])
+        cpf = body["cpf"]
+        name = body["name"]
+        email = body["email"]
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+        cognito.admin_create_user(
+            UserPoolId=USER_POOL_ID,
+            Username=email,
+            UserAttributes=[
+                {"Name": "email", "Value": email},
+                {"Name": "custom:cpf", "Value": cpf},
+                {"Name": "name", "Value": name}
+            ]
+        )
+        return {"statusCode": 201, "body": json.dumps({"message": "Created user successfully"})}
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    except Exception as e:
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"message": "Authentication function"}),
-    }
+def get_user(event):
+    try:
+        cpf = event["pathParameters"]["cpf"]
+        response = cognito.list_users(UserPoolId=USER_POOL_ID)
+        
+        for user in response.get("Users", []):
+            user_data = {}
+            for key, value in user.items():
+                if isinstance(value, datetime):
+                    user_data[key] = value.isoformat()
+                else:
+                    user_data[key] = value
+                
+            for attr in user.get("Attributes", []):
+                if attr["Name"] == "custom:cpf" and attr["Value"] == cpf:
+                    return {
+                        "statusCode": 200,
+                        "body": json.dumps({"message": user_data})
+                    }
+        
+        return {"statusCode": 404, "body": json.dumps({"message": "User not found"})}
+    
+    except Exception as e:
+        print(f"Error to search user: {e}")
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
