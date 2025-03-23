@@ -1,7 +1,7 @@
 {
-  "body": "{\"message\": \"hello world\"}",
-  "resource": "/hello",
-  "path": "/hello",
+  "body": "{\"message\": \"Authentication function\"}",
+  "resource": "/authentication",
+  "path": "/authentication",
   "httpMethod": "GET",
   "isBase64Encoded": false,
   "queryStringParameters": {
@@ -53,8 +53,8 @@
       "userAgent": "Custom User Agent String",
       "user": null
     },
-    "path": "/hello",
-    "resourcePath": "/hello",
+    "path": "/authentication",
+    "resourcePath": "/authentication",
     "httpMethod": "POST",
     "apiId": "1234567890",
     "protocol": "HTTP/1.1"
